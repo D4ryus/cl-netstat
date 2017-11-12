@@ -48,15 +48,22 @@
                                   ((< i upper-bound) #\o)
                                   (t #\O))))))
 
-(concatenate 'string (list #\. #\o #\O))
-
-(defun test ()
-    (let ((thing (make-instance 'array-loop :size 8)))
-      (loop :for i :from 0 :upto 24
-            :do (progn
-                  (push-element thing (random 100))
-                  (format t "~a~%" (to-string-thing thing))
-                  (sleep 0.2)))))
+(defmethod format-graph ((array-loop array-loop) window)
+  (let* ((lst (get-list array-loop))
+         (max (reduce #'max lst))
+         (lower-bound (/ max 3))
+         (upper-bound (* 2 lower-bound)))
+    (loop :for nbr :in lst
+          :do (with-style (window (list (if (eql 0 nbr)
+                                            :white
+                                            (list :number (color-size->term nbr)))
+                                        :black))
+                (croatoan:add-char window
+                                   (cond
+                                     ((= nbr 0) #\_)
+                                     ((< nbr lower-bound) #\.)
+                                     ((< nbr upper-bound) #\o)
+                                     (t #\O)))))))
 
 (let ((xb (ash 1 53)) ;; 8xb
       (tb (ash 1 43)) ;; 8tb
@@ -200,17 +207,7 @@
                       (croatoan:add-string window
                                            (format nil "~8,,,' a" str)))))
         (croatoan:add-char window #\Space)
-        (let* ((lst (get-list (gethash (car stat) *interface-graphs*)))
-               (max (reduce #'max lst))
-               (lower-bound (/ max 3))
-               (upper-bound (* 2 lower-bound)))
-          (loop :for nbr :in lst
-                :do (with-style (window (list (list :number (color-size->term nbr)) :black))
-                      (croatoan:add-char window
-                                         (cond
-                                           ((< nbr lower-bound) #\.)
-                                           ((< nbr upper-bound) #\o)
-                                           (t #\O))))))))
+        (format-graph (gethash (car stat) *interface-graphs*) window)))
 
 (defun gen-stats (last cur)
   (loop :for (interface . data) :in (diff-interface-data last cur)
