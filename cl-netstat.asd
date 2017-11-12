@@ -10,4 +10,5 @@
                #:cl-ppcre)
   :serial t
   :components ((:file "package")
+               (:file "term-rgb-map")
                (:file "cl-netstat")))
