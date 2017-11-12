@@ -126,8 +126,7 @@
          ,@body))))
 
 (defmacro mapassoc (function list &rest more-lists)
-  (let ((val (gensym "val"))
-        (args (gensym "args")))
+  (let ((args (gensym "args")))
     `(mapcar (lambda (&rest ,args)
                (cons (caar ,args)
                      (apply ,function
