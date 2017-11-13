@@ -11,6 +11,27 @@
 ;;        OOO.oOOo (10mb/s)
 ;;        OO.oOOo. ( 5mb/s)
 
+(defmacro with-style ((window color-pair &optional attributes) &body body)
+  (let ((old-color-pair (gensym "old-color-pair"))
+        (old-attributes (gensym "old-attributes"))
+        (new-color-pair (gensym "new-color-pair"))
+        (new-attributes (gensym "new-attributes")))
+    `(let ((,old-color-pair (croatoan:.color-pair ,window))
+           (,old-attributes (croatoan:.attributes ,window))
+           (,new-color-pair ,color-pair)
+           (,new-attributes ,attributes))
+       (when ,new-color-pair
+         (setf (croatoan:.color-pair ,window) ,new-color-pair))
+       (when ,new-attributes
+         (setf (croatoan:.attributes ,window) ,new-attributes))
+       (prog1 (progn ,@body)
+         (when ,new-color-pair
+           (setf (croatoan:.color-pair ,window)
+                 ,old-color-pair))
+         (when ,new-attributes
+            (setf (croatoan:.attributes ,window)
+                  ,old-attributes))))))
+
 (defclass array-loop ()
   ((size :initarg :size)
    (data)
@@ -133,27 +154,6 @@
                             (mapcar #'cdr ,args))))
              ,list
              ,@more-lists)))
-
-(defmacro with-style ((window color-pair &optional attributes) &body body)
-  (let ((old-color-pair (gensym "old-color-pair"))
-        (old-attributes (gensym "old-attributes"))
-        (new-color-pair (gensym "new-color-pair"))
-        (new-attributes (gensym "new-attributes")))
-    `(let ((,old-color-pair (croatoan:.color-pair ,window))
-           (,old-attributes (croatoan:.attributes ,window))
-           (,new-color-pair ,color-pair)
-           (,new-attributes ,attributes))
-       (when ,new-color-pair
-         (setf (croatoan:.color-pair ,window) ,new-color-pair))
-       (when ,new-attributes
-         (setf (croatoan:.attributes ,window) ,new-attributes))
-       (prog1 (progn ,@body)
-         (when ,new-color-pair
-           (setf (croatoan:.color-pair ,window)
-                 ,old-color-pair))
-         (when ,new-attributes
-            (setf (croatoan:.attributes ,window)
-                  ,old-attributes))))))
 
 (defun format-interface-data (data)
   (loop :for (interface . data) :in data
