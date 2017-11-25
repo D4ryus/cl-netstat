@@ -58,33 +58,23 @@
 (defmethod get-max ((array-loop array-loop))
   (reduce #'max (slot-value array-loop 'data)))
 
-(defmethod to-string-thing ((array-loop array-loop))
-  (let* ((max (get-max array-loop))
-         (lower-bound (/ max 3))
-         (upper-bound (* 2 lower-bound)))
-    (concatenate 'string
-                 (loop :for i :in (get-list array-loop)
-                       :collect (cond
-                                  ((< i lower-bound) #\.)
-                                  ((< i upper-bound) #\o)
-                                  (t #\O))))))
+(defun to-icon (value &key (max 100) (icons (list #\Space #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█)))
+  (if (or (= max 0)
+          (= value 0))
+      (car icons)
+      (nth (truncate (/ value (/ max (length icons))))
+           icons)))
 
 (defmethod format-graph ((array-loop array-loop) window)
   (let* ((lst (get-list array-loop))
-         (max (reduce #'max lst))
-         (lower-bound (/ max 3))
-         (upper-bound (* 2 lower-bound)))
+         (max (reduce #'max lst)))
     (loop :for nbr :in lst
           :do (with-style (window (list (if (eql 0 nbr)
                                             :white
                                             (list :number (color-size->term nbr)))
                                         :black))
-                (croatoan:add-char window
-                                   (cond
-                                     ((= nbr 0) #\_)
-                                     ((< nbr lower-bound) #\.)
-                                     ((< nbr upper-bound) #\o)
-                                     (t #\O)))))))
+                (croatoan:add-wide-char window
+                                        (to-icon nbr :max max))))))
 
 (let ((xb (ash 1 53)) ;; 8xb
       (tb (ash 1 43)) ;; 8tb
