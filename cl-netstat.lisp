@@ -59,11 +59,11 @@
   (reduce #'max (slot-value array-loop 'data)))
 
 (defun to-icon (value &key (max 100) (icons (list #\Space #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█)))
-  (if (or (= max 0)
-          (= value 0))
-      (car icons)
-      (nth (truncate (/ value (/ max (length icons))))
-           icons)))
+  (cond ((= value 0) (car icons))
+        ((= max 0) (car icons))
+        ((= max value) (car (last icons)))
+        (t (nth (truncate (/ value (/ max (length icons))))
+                icons))))
 
 (defmethod format-graph ((array-loop array-loop) window)
   (let* ((lst (get-list array-loop))
