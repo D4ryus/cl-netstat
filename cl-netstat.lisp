@@ -58,9 +58,9 @@
 (defmethod get-max ((array-loop array-loop))
   (reduce #'max (slot-value array-loop 'data)))
 
-(defun to-icon (value &key (max 100) (icons (list #\Space #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█)))
-  (cond ((= value 0) (car icons))
-        ((= max 0) (car icons))
+(defun to-icon (value &key (max 100) (empty #\Space) (icons (list #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█)))
+  (cond ((= value 0) empty)
+        ((= max 0) empty)
         ((= max value) (car (last icons)))
         (t (nth (truncate (/ value (/ max (length icons))))
                 icons))))
