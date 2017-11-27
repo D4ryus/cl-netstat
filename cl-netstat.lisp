@@ -4,6 +4,7 @@
 
 ;;; "cl-stats" goes here. Hacks and glory await!
 
+(defparameter *max* (* 512 1024))
 
 ;; .oO -> ...OOO.o (10mb/s)
 ;;        ..OOO.oO (20mb/s)
@@ -71,7 +72,9 @@
     (loop :for nbr :in lst
           :do (with-style (window (list (if (eql 0 nbr)
                                             :white
-                                            (list :number (color-size->term nbr)))
+                                            (list :number
+                                                  (color-size->term nbr
+                                                                    *max*)))
                                         :black))
                 (croatoan:add-wide-char window
                                         (to-icon nbr :max max))))))
@@ -259,17 +262,19 @@
               :do (setf red 0)
               :collect (fmt red green)))))))
 
-(defun color-size->term (size)
-  (get-match (get-size-color size)))
-
 (let ((lookup (make-array '(42)
                           :initial-contents (red-yellow-green-gradient-generator 42)
                           :adjustable nil)))
-  (defun get-size-color (size)
-    (let ((spot (integer-length size)))
+  (defun get-size-color (size &optional max)
+    (let ((spot (if max
+                    (truncate (* 41 (/ size max)))
+                    (integer-length size))))
       (if (> spot 41)
           (aref lookup 41)
           (aref lookup spot)))))
+
+(defun color-size->term (size &optional max)
+  (get-match (get-size-color size max)))
 
 (defun color-hashtag-p (color)
   (if (char-equal #\# (aref color 0)) t nil))
