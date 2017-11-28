@@ -299,6 +299,14 @@
           (parse-integer (subseq color 2 4) :radix 16)
           (parse-integer (subseq color 4 6) :radix 16)))
 
+(defun parse-hex (string)
+  (parse-integer string :radix 16))
+
+(defun color-diff (a b)
+  (declare (type list a b))
+  (reduce #'+
+          (mapcar (alexandria:compose #'abs #'-) a b)))
+
 (let ((table (make-hash-table)))
   (defun get-match (color)
     (let ((match (gethash color table)))
@@ -308,15 +316,12 @@
           (best-match 0))
       (multiple-value-bind (r g b)
           (color-string->rgb color)
-        (loop :for (k . (rr gg bb)) :in (mapassoc (lambda (rgb)
-                                                    (mapcar (lambda (val)
-                                                              (parse-integer val :radix 16))
-                                                            rgb))
-                                                  *term->rgb*)
-              :do (let ((diff (reduce #'+
-                                      (mapcar (alexandria:compose #'abs #'-)
-                                              (list r g b)
-                                              (list rr gg bb)))))
+        (loop :for (k . (rr gg bb))
+              :in (mapassoc (lambda (rgb)
+                              (mapcar #'parse-hex rgb))
+                            *term->rgb*)
+              :do (let ((diff (color-diff (list r g b)
+                                          (list rr gg bb))))
                     (when (< diff best-match-diff)
                       (setf best-match k
                             best-match-diff diff))
