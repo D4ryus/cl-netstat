@@ -84,7 +84,7 @@
       (gb (ash 1 33)) ;; 8gb
       (mb (ash 1 23)) ;; 8mb
       (kb (ash 1 13)));; 8kb
-  (defun format-size (size &optional (when-zero nil when-zero-given?))
+  (defun format-size (size &key (when-zero nil when-zero-given?) (max nil))
     "formats given size (number) to a more readable format (string),
     when-zero can be given to return it instead of \"0Byt\""
     (if (and (eql 0 size)
@@ -101,7 +101,7 @@
          (list :black
                (if (eql 0 size)
                    :white
-                   (list :number (get-match (get-size-color size)))))))))
+                   (list :number (color-size->term size max))))))))
 
 (defun get-interface-data ()
   (with-open-file (stream "/proc/net/dev"
@@ -192,8 +192,10 @@
         (croatoan:add-string window
                              (format nil "~12,,,' a" (car stat)))
         (loop :for bytes :in (cdr stat)
+              :with i = 0
               :do (multiple-value-bind (str color)
-                      (format-size bytes)
+                      (format-size bytes :max (when (< 2 (incf i))
+                                                *max*))
                     (croatoan:add-char window #\Space)
                     (with-style (window color)
                       (croatoan:add-string window
