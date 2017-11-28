@@ -240,10 +240,14 @@
     (croatoan:clear scr)
     (croatoan:box scr)
     (croatoan:refresh scr)
-    (croatoan:event-case (scr event)
-      (#\q (return-from croatoan:event-case))
-      ((nil)
-       (draw scr)))))
+    (with-simple-restart
+        (abort "Quit Croatoan Event-Loop")
+      (croatoan:event-case (scr event)
+        (#\q (return-from croatoan:event-case))
+        ((nil)
+         (with-simple-restart
+             (continue "Continue Croatoan Event-Loop")
+           (draw scr)))))))
 
 (defun red-yellow-green-gradient-generator (count)
   (let ((red 255)
