@@ -5,6 +5,12 @@
 ;;; "cl-stats" goes here. Hacks and glory await!
 
 (defparameter *max* (* 512 1024))
+(defparameter *graph-length* 25)
+(defparameter *refresh-time* 1.00)
+
+;; (progn
+;;   (setf *graph-length* 100)
+;;   (setf *interface-graphs* (make-hash-table :test 'equal)))
 
 ;; .oO -> ...OOO.o (10mb/s)
 ;;        ..OOO.oO (20mb/s)
@@ -66,18 +72,24 @@
         (t (nth (truncate (/ value (/ max (length icons))))
                 icons))))
 
+(defun format-graph-part (window number &optional (max *max*))
+  (let ((color (list (if (eql 0 number)
+                         :white
+                         (list :number
+                               (color-size->term number max)))
+                     :black)))
+    (with-style (window color)
+      (croatoan:add-wide-char window
+                              (to-icon number :max max)))))
+
 (defmethod format-graph ((array-loop array-loop) window)
   (let* ((lst (get-list array-loop))
-         (max (reduce #'max lst)))
+         (max (reduce #'max lst))
+         (first (car lst)))
+    (format-graph-part window first)
+    (croatoan:add-char window #\Space)
     (loop :for nbr :in lst
-          :do (with-style (window (list (if (eql 0 nbr)
-                                            :white
-                                            (list :number
-                                                  (color-size->term nbr
-                                                                    *max*)))
-                                        :black))
-                (croatoan:add-wide-char window
-                                        (to-icon nbr :max max))))))
+          :do (format-graph-part window nbr))))
 
 (let ((xb (ash 1 53)) ;; 8xb
       (tb (ash 1 43)) ;; 8tb
@@ -159,7 +171,10 @@
         :for (interface-b . data-b) :in b
         :when (string= interface-a interface-b)
         :collect (cons interface-a
-                       (mapassoc #'- data-b data-a))))
+                       ;; (mapassoc #'- data-b data-a)
+                       (mapassoc (lambda (b a)
+                                   (truncate (/ (- b a) *refresh-time*)))
+                                 data-b data-a))))
 
 (defparameter *last-stats* nil)
 (setf *last-stats* (get-interface-data))
@@ -171,7 +186,7 @@
   (loop :for (interface . stat) :in stats
         :unless (gethash interface *interface-graphs*)
         :do (setf (gethash interface *interface-graphs*)
-                  (make-instance 'array-loop :size 8)))
+                  (make-instance 'array-loop :size *graph-length*)))
   (loop :for key :being :the :hash-key :of *interface-graphs*
         :do (let ((data (cdr (assoc key stats :test #'equal))))
               (push-element (gethash key *interface-graphs*)
@@ -214,12 +229,14 @@
 (defparameter *win* nil)
 
 (defun draw (scr)
-  (sleep 1.0)
+  (sleep *refresh-time*)
   (croatoan:clear scr)
   (croatoan:move scr 0 0)
   (setf (croatoan:.color-pair scr)
         '(:white :black))
-  (let ((stats (gen-stats *last-stats* (setf *last-stats* (get-interface-data)))))
+  (let ((stats (gen-stats *last-stats*
+                          (setf *last-stats*
+                                (get-interface-data)))))
     ;;(croatoan:new-line scr)
     ;; (let ((window (make-instance'croatoan:window))))
     (update-graphs stats)
