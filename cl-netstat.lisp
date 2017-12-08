@@ -156,12 +156,6 @@
              ,list
              ,@more-lists)))
 
-(defun format-interface-data (data)
-  (loop :for (interface . data) :in data
-        :collect (cons interface
-                       (mapassoc #'format-size
-                                 data))))
-
 (defun diff-interface-data (a b)
   (loop :for (interface-a . data-a) :in a
         :for (interface-b . data-b) :in b
