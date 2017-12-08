@@ -251,6 +251,8 @@
         (abort "Quit Croatoan Event-Loop")
       (croatoan:event-case (scr event)
         (#\q (return-from croatoan:event-case))
+        (#\+ (incf *refresh-time* 0.1))
+        (#\- (when (< (decf *refresh-time* 0.1) 0.1) (setf *refresh-time* 0.1)))
         ((nil)
          (with-simple-restart
              (continue "Continue Croatoan Event-Loop")
