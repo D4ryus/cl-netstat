@@ -84,10 +84,9 @@
 
 (defmethod format-graph ((array-loop array-loop) window)
   (let* ((lst (get-list array-loop))
-         (max (reduce #'max lst))
          (first (car lst)))
     (format-graph-part window first)
-    (croatoan:add-char window #\Space)
+    (croatoan:add-char window #\|)
     (loop :for nbr :in lst
           :do (format-graph-part window nbr))))
 
