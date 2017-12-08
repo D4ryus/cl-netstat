@@ -66,11 +66,13 @@
   (reduce #'max (slot-value array-loop 'data)))
 
 (defun to-icon (value &key (max 100) (empty #\Space) (icons (list #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█)))
-  (cond ((= value 0) empty)
-        ((= max 0) empty)
-        ((= max value) (car (last icons)))
-        (t (nth (truncate (/ value (/ max (length icons))))
-                icons))))
+  (or (cond ((= value 0) empty)
+            ((= max 0) empty)
+            ((< value 0) empty)
+            ((>= value max) (car (last icons)))
+            (t (nth (truncate (/ value (/ max (length icons))))
+                    icons)))
+      empty))
 
 (defun format-graph-part (window number &optional (max *max*))
   (multiple-value-bind (_ color)
