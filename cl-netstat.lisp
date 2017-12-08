@@ -7,6 +7,7 @@
 (defparameter *max* (* 512 1024))
 (defparameter *graph-length* 25)
 (defparameter *refresh-time* 1.00)
+(defparameter *print-time-p* nil)
 
 ;; (progn
 ;;   (setf *graph-length* 100)
@@ -192,7 +193,14 @@
     (croatoan:add-string window
                          (format nil "~12,,,' a~{ ~8,,,' a~}"
                                  "NETWORK"
-                                 (list "Total Rx" "Total Tx" "Rx/s" "Tx/s" "Graph"))))
+                                 (remove-if #'null
+                                            (list "Total Rx"
+                                                  "Total Tx"
+                                                  "Rx/s"
+                                                  "Tx/s"
+                                                  "Graph"
+                                                  (when *print-time-p*
+                                                    (format nil "~,2f" *refresh-time*)))))))
   (loop :for stat :in stats
         :do
         (croatoan:new-line window)
@@ -255,6 +263,7 @@
         (#\q (return-from croatoan:event-case))
         (#\+ (incf *refresh-time* 0.1))
         (#\- (when (< (decf *refresh-time* 0.1) 0.1) (setf *refresh-time* 0.1)))
+        (#\Space (setf *print-time-p* (not *print-time-p*)))
         ((nil)
          (with-simple-restart
              (continue "Continue Croatoan Event-Loop")
