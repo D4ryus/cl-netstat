@@ -73,12 +73,9 @@
                 icons))))
 
 (defun format-graph-part (window number &optional (max *max*))
-  (let ((color (list (if (eql 0 number)
-                         :white
-                         (list :number
-                               (color-size->term number max)))
-                     :black)))
-    (with-style (window color)
+  (multiple-value-bind (_ color)
+      (format-size number :max *max*)
+    (with-style (window (reverse color))
       (croatoan:add-wide-char window
                               (to-icon number :max max)))))
 
