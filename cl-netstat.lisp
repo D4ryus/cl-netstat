@@ -191,7 +191,7 @@
 (defun format-interfaces (window stats)
   (with-style (window '(:white :black) '(:bold :underline))
     (croatoan:add-string window
-                         (format nil "~12,,,' a~{ ~8,,,' a~}"
+                         (format nil "~16,,,' a~{ ~8,,,' a~}"
                                  "NETWORK"
                                  (remove-if #'null
                                             (list "Total Rx"
@@ -205,7 +205,7 @@
         :do
         (croatoan:new-line window)
         (croatoan:add-string window
-                             (format nil "~12,,,' a" (car stat)))
+                             (format nil "~16,,,' a" (car stat)))
         (loop :for bytes :in (cdr stat)
               :with i = 0
               :do (multiple-value-bind (str color)
