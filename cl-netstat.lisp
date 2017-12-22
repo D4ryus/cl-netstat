@@ -85,8 +85,6 @@
 (defmethod format-graph ((array-loop array-loop) window)
   (let* ((lst (get-list array-loop))
          (first (car lst)))
-    (format-graph-part window first)
-    (croatoan:add-char window #\|)
     (loop :for nbr :in lst
           :do (format-graph-part window nbr))))
 
@@ -188,34 +186,48 @@
                                    (nth 3 data))
                                 0)))))
 
+(defun format-bytes (window bytes &key max)
+  (multiple-value-bind (str color) (format-size bytes :max max)
+    (with-style (window color)
+      (croatoan:add-string window
+                           (format nil "~8,,,' a" str)))))
+
 (defun format-interfaces (window stats)
-  (with-style (window '(:white :black) '(:bold :underline))
-    (croatoan:add-string window
-                         (format nil "~16,,,' a~{ ~8,,,' a~}"
-                                 "NETWORK"
-                                 (remove-if #'null
-                                            (list "Total Rx"
-                                                  "Total Tx"
-                                                  "Rx/s"
-                                                  "Tx/s"
-                                                  "Graph"
-                                                  (when *print-time-p*
-                                                    (format nil "~,2f" *refresh-time*)))))))
+  (flet ((graph-line ()
+           (let ((length (- *graph-length* 5)))
+             (make-string (if (< length 0) 0 length) :initial-element #\Space))))
+    (with-style (window '(:white :black) '(:bold :underline))
+      (croatoan:add-string window
+                           (format nil "~a~a~a~a~a~a~a~a"
+                                   "NETWORK          "
+                                   "Total Rx "
+                                   "Total Tx "
+                                   "    Rx/s  "
+                                   "  Tx/s     "
+                                   "Graph"
+                                   (graph-line)
+                                   (if *print-time-p*
+                                       (format nil "~,2f" *refresh-time*)
+                                       "")))))
   (loop :for stat :in stats
         :do
         (croatoan:new-line window)
-        (croatoan:add-string window
-                             (format nil "~16,,,' a" (car stat)))
-        (loop :for bytes :in (cdr stat)
-              :with i = 0
-              :do (multiple-value-bind (str color)
-                      (format-size bytes :max (when (< 2 (incf i))
-                                                *max*))
-                    (croatoan:add-char window #\Space)
-                    (with-style (window color)
-                      (croatoan:add-string window
-                                           (format nil "~8,,,' a" str)))))
-        (croatoan:add-char window #\Space)
+        (destructuring-bind (interface total-rx total-tx rx tx)
+            stat
+          (croatoan:add-string window
+                               (format nil "~16,,,' a" interface))
+          (croatoan:add-char window #\Space)
+          (format-bytes window total-rx)
+          (croatoan:add-char window #\Space)
+          (format-bytes window total-tx)
+          (croatoan:add-char window #\Space)
+          (format-bytes window rx :max *max*)
+          (croatoan:add-char window #\Space)
+          (format-graph-part window rx)
+          (format-graph-part window tx)
+          (croatoan:add-char window #\Space)
+          (format-bytes window tx :max *max*)
+          (croatoan:add-char window #\Space))
         (format-graph (gethash (car stat) *interface-graphs*) window)))
 
 (defun gen-stats (last cur)
