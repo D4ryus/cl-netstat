@@ -6,7 +6,7 @@
 
 (defparameter *max* (* 512 1024))
 (defparameter *graph-length* 25)
-(defparameter *refresh-time* 1.00)
+(defparameter *refresh-time* 0.25)
 (defparameter *print-time-p* nil)
 
 ;; (progn
