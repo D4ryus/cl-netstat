@@ -132,7 +132,6 @@
                                                    :trans-carrier :trans-compressed)
                                              (cdr (cl-ppcre:split "\\s+" data))))))))
 
-
 (defmacro assoc-chain (args data)
   `(assoc ,(car (last args))
           ,(if (cdr args)
@@ -168,10 +167,8 @@
                                  data-b data-a))))
 
 (defparameter *last-stats* nil)
-(setf *last-stats* (get-interface-data))
 
 (defparameter *interface-graphs* nil)
-(setf *interface-graphs* (make-hash-table :test 'equal))
 
 (defun update-graphs (stats)
   (loop :for (interface . stat) :in stats
@@ -261,25 +258,34 @@
     ;;         (croatoan:add-string scr (format nil "~4,,,' a " i))))
     (croatoan:refresh scr)))
 
+(defun reset (scr)
+  (setf *last-stats* (get-interface-data))
+  (setf *interface-graphs* (make-hash-table :test 'equal))
+  (croatoan:clear scr)
+  (croatoan:refresh scr))
+
 (defun window ()
   (croatoan:with-screen (scr :input-echoing nil
                              :input-blocking nil
                              :enable-fkeys t
                              :cursor-visibility nil)
-    (croatoan:clear scr)
-    (croatoan:box scr)
-    (croatoan:refresh scr)
     (with-simple-restart
         (abort "Quit Croatoan Event-Loop")
-      (croatoan:event-case (scr event)
-        (#\q (return-from croatoan:event-case))
-        (#\+ (incf *refresh-time* 0.1))
-        (#\- (when (< (decf *refresh-time* 0.1) 0.1) (setf *refresh-time* 0.1)))
-        (#\Space (setf *print-time-p* (not *print-time-p*)))
-        ((nil)
-         (with-simple-restart
-             (continue "Continue Croatoan Event-Loop")
-           (draw scr)))))))
+      (loop
+        (with-simple-restart
+            (reset "Reset Stats")
+          (reset scr)
+          (croatoan:event-case (scr event)
+            (#\q (return-from croatoan:event-case))
+            (#\+ (incf *refresh-time* 0.1))
+            (#\- (when (< (decf *refresh-time* 0.1) 0.1)
+                   (setf *refresh-time* 0.1)))
+            (#\r (reset scr))
+            (#\Space (setf *print-time-p* (not *print-time-p*)))
+            ((nil)
+             (with-simple-restart
+                 (continue "Continue Croatoan Event-Loop")
+               (draw scr)))))))))
 
 (defun red-yellow-green-gradient-generator (count)
   (let ((red 255)
