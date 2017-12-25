@@ -5,7 +5,7 @@
 ;;; "cl-stats" goes here. Hacks and glory await!
 
 (defparameter *max* (* 1024 1024))
-(defparameter *graph-length* 25)
+(defparameter *graph-length* 23)
 (defparameter *refresh-time* 0.25)
 (defparameter *print-time-p* nil)
 
