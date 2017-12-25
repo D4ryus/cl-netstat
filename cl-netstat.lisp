@@ -258,11 +258,14 @@
     ;;         (croatoan:add-string scr (format nil "~4,,,' a " i))))
     (croatoan:refresh scr)))
 
+(defun clear (scr)
+  (croatoan:clear scr)
+  (croatoan:refresh scr))
+
 (defun reset (scr)
   (setf *last-stats* (get-interface-data))
   (setf *interface-graphs* (make-hash-table :test 'equal))
-  (croatoan:clear scr)
-  (croatoan:refresh scr))
+  (clear scr))
 
 (defun window ()
   (croatoan:with-screen (scr :input-echoing nil
@@ -271,21 +274,19 @@
                              :cursor-visibility nil)
     (with-simple-restart
         (abort "Quit Croatoan Event-Loop")
-      (loop
-        (with-simple-restart
-            (reset "Reset Stats")
-          (reset scr)
-          (croatoan:event-case (scr event)
-            (#\q (return-from croatoan:event-case))
-            (#\+ (incf *refresh-time* 0.1))
-            (#\- (when (< (decf *refresh-time* 0.1) 0.1)
-                   (setf *refresh-time* 0.1)))
-            (#\r (reset scr))
-            (#\Space (setf *print-time-p* (not *print-time-p*)))
-            ((nil)
-             (with-simple-restart
-                 (continue "Continue Croatoan Event-Loop")
-               (draw scr)))))))))
+      (reset scr)
+      (croatoan:event-case (scr event)
+        (#\q (return-from croatoan:event-case))
+        (#\+ (incf *refresh-time* 0.1))
+        (#\- (when (< (decf *refresh-time* 0.1) 0.1)
+               (setf *refresh-time* 0.1)))
+        (#\r (reset scr))
+        (#\c (clear scr))
+        (#\Space (setf *print-time-p* (not *print-time-p*)))
+        ((nil)
+         (with-simple-restart
+             (continue "Continue Croatoan Event-Loop")
+           (draw scr)))))))
 
 (defun red-yellow-green-gradient-generator (count)
   (let ((red 255)
