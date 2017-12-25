@@ -246,16 +246,8 @@
   (let ((stats (gen-stats *last-stats*
                           (setf *last-stats*
                                 (get-interface-data)))))
-    ;;(croatoan:new-line scr)
-    ;; (let ((window (make-instance'croatoan:window))))
     (update-graphs stats)
     (format-interfaces scr stats)
-    ;; (loop :for i :from 16 :to 255
-    ;;       :do
-    ;;       (when (eql 0 (mod (- i 4) 6))
-    ;;         (croatoan:new-line scr))
-    ;;       (with-style (scr (list :black (list :number i)))
-    ;;         (croatoan:add-string scr (format nil "~4,,,' a " i))))
     (croatoan:refresh scr)))
 
 (defun clear (scr)
@@ -272,21 +264,31 @@
                              :input-blocking nil
                              :enable-fkeys t
                              :cursor-visibility nil)
-    (with-simple-restart
-        (abort "Quit Croatoan Event-Loop")
-      (reset scr)
-      (croatoan:event-case (scr event)
-        (#\q (return-from croatoan:event-case))
-        (#\+ (incf *refresh-time* 0.1))
-        (#\- (when (< (decf *refresh-time* 0.1) 0.1)
-               (setf *refresh-time* 0.1)))
-        (#\r (reset scr))
-        (#\c (clear scr))
-        (#\Space (setf *print-time-p* (not *print-time-p*)))
-        ((nil)
-         (with-simple-restart
-             (continue "Continue Croatoan Event-Loop")
-           (draw scr)))))))
+    (reset scr)
+    (croatoan:event-case (scr event)
+      (#\q (return-from croatoan:event-case))
+      (#\+ (incf *refresh-time* 0.1))
+      (#\- (when (< (decf *refresh-time* 0.1) 0.1)
+             (setf *refresh-time* 0.1)))
+      (#\r (reset scr))
+      (#\c (clear scr))
+      (#\Space (setf *print-time-p* (not *print-time-p*)))
+      ((nil)
+       (restart-case
+           (draw scr)
+         (continue ()
+           :report (lambda (stream)
+                     (format stream "Continue Croatoan Event-Loop"))
+           (values nil t))
+         (reset ()
+           :report (lambda (stream)
+                     (format stream "Reset values"))
+           (reset scr)
+           (values nil t))
+         (abort ()
+           :report (lambda (stream)
+                     (format stream "Quit Croatoan Event-Loop"))
+           (return-from croatoan:event-case)))))))
 
 (defun red-yellow-green-gradient-generator (count)
   (let ((red 255)
