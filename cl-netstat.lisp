@@ -237,18 +237,19 @@
 
 (defparameter *win* nil)
 
-(defun draw (scr)
-  (sleep *refresh-time*)
-  (croatoan:clear scr)
-  (croatoan:move scr 0 0)
-  (setf (croatoan:.color-pair scr)
+(defun draw-stats (window stats)
+  (croatoan:move window 0 0)
+  (setf (croatoan:.color-pair window)
         '(:white :black))
+  (update-graphs stats)
+  (format-interfaces window stats))
+
+(defun draw (screen)
   (let ((stats (gen-stats *last-stats*
-                          (setf *last-stats*
-                                (get-interface-data)))))
-    (update-graphs stats)
-    (format-interfaces scr stats)
-    (croatoan:refresh scr)))
+                         (setf *last-stats*
+                               (get-interface-data)))))
+    (croatoan:clear screen)
+    (draw-stats screen stats)))
 
 (defun clear (scr)
   (croatoan:clear scr)
@@ -274,8 +275,9 @@
       (#\c (clear scr))
       (#\Space (setf *print-time-p* (not *print-time-p*)))
       ((nil)
-       (restart-case
-           (draw scr)
+       (restart-case (progn
+                       (sleep *refresh-time*)
+                       (draw scr))
          (continue ()
            :report (lambda (stream)
                      (format stream "Continue Croatoan Event-Loop"))
