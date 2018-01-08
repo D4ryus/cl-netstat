@@ -28,17 +28,19 @@
            (,old-attributes (croatoan:.attributes ,window))
            (,new-color-pair ,color-pair)
            (,new-attributes ,attributes))
-       (when ,new-color-pair
-         (setf (croatoan:.color-pair ,window) ,new-color-pair))
-       (when ,new-attributes
-         (setf (croatoan:.attributes ,window) ,new-attributes))
+       ,(when (null attributes)
+          `(declare (ignore ,new-attributes ,old-attributes)))
+       (setf (croatoan:.color-pair ,window) ,new-color-pair)
+       ,(when attributes
+          `(when ,new-attributes
+             (setf (croatoan:.attributes ,window) ,new-attributes)))
        (prog1 (progn ,@body)
-         (when ,new-color-pair
-           (setf (croatoan:.color-pair ,window)
-                 ,old-color-pair))
-         (when ,new-attributes
-            (setf (croatoan:.attributes ,window)
-                  ,old-attributes))))))
+         (setf (croatoan:.color-pair ,window)
+               ,old-color-pair)
+         ,(when attributes
+            `(when ,new-attributes
+               (setf (croatoan:.attributes ,window)
+                     ,old-attributes)))))))
 
 (defclass array-loop ()
   ((size :initarg :size)
