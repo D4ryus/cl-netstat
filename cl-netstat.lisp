@@ -78,6 +78,7 @@
 (defun format-graph-part (window number &optional (max *max*))
   (multiple-value-bind (_ color)
       (format-size number :max *max*)
+    (declare (ignore _))
     (with-style (window (reverse color))
       (croatoan:add-wide-char window
                               (to-icon number :max max)))))
