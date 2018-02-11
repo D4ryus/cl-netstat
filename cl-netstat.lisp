@@ -8,6 +8,14 @@
 (defparameter *graph-length* 23)
 (defparameter *refresh-time* 0.25)
 (defparameter *print-time-p* nil)
+(defparameter *color-mode* :256)
+(defparameter *unicode-mode* t)
+(defparameter *icons* (list #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█))
+
+(defparameter *rgy-percentage*
+  (list 90 ;; over 90% -> red
+        75 ;; over 75% -> yellow
+        10)) ;; under 10% -> green
 
 ;; (progn
 ;;   (setf *graph-length* 100)
@@ -19,28 +27,32 @@
 ;;        OOO.oOOo (10mb/s)
 ;;        OO.oOOo. ( 5mb/s)
 
+(defmacro with-thing ((window new thing) &body body)
+  (let ((old-thing (gensym "old-thing"))
+        (new-thing (gensym "new-thing")))
+    `(let ((,old-thing (,thing ,window))
+           (,new-thing ,new))
+       (if ,new-thing
+           (progn
+             (setf (,thing ,window) ,new-thing)
+             (prog1 (progn ,@body)
+               (setf (,thing ,window) ,old-thing)))
+           (progn ,@body)))))
+
 (defmacro with-style ((window color-pair &optional attributes) &body body)
-  (let ((old-color-pair (gensym "old-color-pair"))
-        (old-attributes (gensym "old-attributes"))
-        (new-color-pair (gensym "new-color-pair"))
-        (new-attributes (gensym "new-attributes")))
-    `(let ((,old-color-pair (croatoan:.color-pair ,window))
-           (,old-attributes (croatoan:.attributes ,window))
-           (,new-color-pair ,color-pair)
-           (,new-attributes ,attributes))
-       ,(when (null attributes)
-          `(declare (ignore ,new-attributes ,old-attributes)))
-       (setf (croatoan:.color-pair ,window) ,new-color-pair)
-       ,(when attributes
-          `(when ,new-attributes
-             (setf (croatoan:.attributes ,window) ,new-attributes)))
-       (prog1 (progn ,@body)
-         (setf (croatoan:.color-pair ,window)
-               ,old-color-pair)
-         ,(when attributes
-            `(when ,new-attributes
-               (setf (croatoan:.attributes ,window)
-                     ,old-attributes)))))))
+  (cond
+    ((and (null color-pair) (null attributes))
+     `(progn ,@body))
+    ((and (null color-pair) attributes)
+     `(with-thing (,window ,attributes croatoan:.attributes)
+        (progn ,@body)))
+    ((and color-pair (null attributes))
+     `(with-thing (,window ,color-pair croatoan:.color-pair)
+        (progn ,@body)))
+    (t
+     `(with-thing (,window ,attributes croatoan:.attributes)
+        (with-thing (,window ,color-pair croatoan:.color-pair)
+          (progn ,@body))))))
 
 (defclass array-loop ()
   ((size :initarg :size)
@@ -68,7 +80,9 @@
 (defmethod get-max ((array-loop array-loop))
   (reduce #'max (slot-value array-loop 'data)))
 
-(defun to-icon (value &key (max 100) (empty #\Space) (icons (list #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█)))
+(defun to-icon (value &key (max 100) (empty #\Space) (icons *icons*))
+  (unless *unicode-mode*
+    (setf icons (list #\. #\o #\O)))
   (or (cond ((= value 0) empty)
             ((= max 0) empty)
             ((< value 0) empty)
@@ -91,6 +105,19 @@
     (loop :for nbr :in lst
           :do (format-graph-part window nbr))))
 
+(defun get-rgy-color (size max)
+  (when max
+    (if (eql 0 size)
+        '(:black (:number 2))
+        (let ((percentage (/ size (/ max 100))))
+          (destructuring-bind (up mid low)
+              *rgy-percentage*
+            (cond
+              ((> percentage up) '(:black :red))
+              ((> percentage mid) '(:black :yellow))
+              ((< percentage low) '(:black :green))
+              (t nil)))))))
+
 (let ((xb (ash 1 53)) ;; 8xb
       (tb (ash 1 43)) ;; 8tb
       (gb (ash 1 33)) ;; 8gb
@@ -110,10 +137,14 @@
            ((> size mb) (format nil "~4d MiB" (ash size -20)))
            ((> size kb) (format nil "~4d KiB" (ash size -10)))
            (t           (format nil "~4d Byt" size)          ))
-         (list :black
-               (if (eql 0 size)
-                   :white
-                   (list :number (color-size->term size max))))))))
+         (case *color-mode*
+           (:8 (get-rgy-color size max))
+           (:256
+            (list :black
+                  (if (eql 0 size)
+                      :white
+                      (list :number (color-size->term size max)))))
+           (t nil))))))
 
 (defun get-interface-data ()
   (with-open-file (stream "/proc/net/dev"
@@ -374,3 +405,123 @@
                     (when (eql 0 best-match-diff)
                       (return)))))
       (setf (gethash color table) best-match))))
+
+(defun usage (&optional error-msg &rest args)
+  (when error-msg
+    (apply #'format t error-msg args))
+  (format t "usage: cl-netstat [--color | -c] [--max | -m] [--graph | -g] [--no-unicode | -n] [--help | -h]~%")
+  (when error-msg
+    (error error-msg args)))
+
+(apply #'format t "~a ~a~%" (list :a :a))
+
+(defmacro switch-args (args usage-fn &rest cases)
+  `(with-args (,args ,usage-fn)
+     (str-case arg
+       ,@cases
+       (t (funcall ,usage-fn "unknown argument ~a~%" arg)))))
+
+(defmacro with-args ((args usage-fn) &body body)
+  (let ((cur (gensym "current")))
+    `(let* ((,cur ,args)
+            (arg (car ,cur)))
+       (flet ((shift (&optional (print-error t))
+                (setf ,cur (cdr ,cur))
+                (setf arg (car ,cur))
+                (when (and print-error
+                           (not arg))
+                  (funcall ,usage-fn "out of arguments~%"))))
+         (loop :while ,cur
+               :do
+               (prog1 (progn ,@body)
+                 (shift nil)))))))
+
+(defmacro str-case (string-form &body cases)
+  "'case' for strings, expands to cond clause with string=
+   as compare function"
+  (let ((result (gensym "result")))
+    `(let ((,result ,string-form))
+       (declare (ignorable ,result))
+       (cond
+         ,@(loop :for (str form) :in cases
+                 :collect
+                 (typecase str
+                   (boolean (if str
+                                `(t ,form)
+                                (error "nil is not a string")))
+                   (string `((string= ,result ,str) ,form))
+                   (list `((or ,@(loop :for s :in str
+                                       :collect `(string= ,result ,s)))
+                           ,form))))))))
+
+(defun help ()
+  (format t
+          "cl-netstat: Showing per interface Network stats~%")
+  (usage)
+  (fresh-line)
+  (format t "Arguments:~%")
+  (format t "    --color | -c (8 | 256 | none)~%")
+  (format t "        Show output in colors:~%")
+  (format t "            8: only Red, Green and Yellow~%")
+  (format t "            256: 256 Colors~%")
+  (format t "            none: dont use colors~%")
+  (format t "        Default: 256~%")
+  (format t "    --max | -m number~%")
+  (format t "        Given number describes maximum network traffic,~%")
+  (format t "        used to color output.~%")
+  (format t "        Default: 1048576 (* 1024 1024)~%")
+  (format t "    --refresh-time | -r number~%")
+  (format t "        Refresh timeout given in milliseconds~%")
+  (format t "        Default: 1000 (1 second)~%")
+  (format t "    --graph | -g string~%")
+  (format t "        Specify graph characters from lowest to highest.~%")
+  (format t "        Default: ▁▂▃▄▅▆▇█ (.oO)~%")
+  (format t "    --no-unicode | -n~%")
+  (format t "        Show .oO instead of unicode bars as graph.~%")
+  (format t "        This will overwrite --graph~%")
+  (format t "    --help | -h~%")
+  (format t "        Show this message.~%"))
+
+(defun main ()
+  (when (uiop:command-line-arguments)
+    (switch-args (uiop:command-line-arguments) #'usage
+      (("--color" "-c")
+       (progn
+         (shift)
+         (setf *color-mode*
+               (str-case arg
+                 ("8" :8)
+                 ("256" :256)
+                 (("None" "none") nil)
+                 (t (usage "unknown color: ~a~%" arg))))))
+      (("--max" "-m")
+       (progn
+         (shift)
+         (setf *max* (parse-integer arg))))
+      (("--refresh-time" "-r")
+       (progn
+         (shift)
+         (setf *refresh-time* (* 0.001 (parse-integer arg)))))
+      (("--graph" "-g")
+       (progn
+         (shift)
+         (setf *icons* (map 'list #'identity arg))))
+      (("--no-unicode" "-n")
+       (setf *unicode-mode* nil))
+      (("--help" "-h")
+       (progn
+         (help)
+         (uiop:quit 0)))
+      ("--options"
+       (progn
+         (mapcar (lambda (op)
+                   (princ op)
+                   (fresh-line))
+                 (list "--color" "-c"
+                       "--max" "-m"
+                       "--refresh-time" "-r"
+                       "--graph" "-g"
+                       "--no-unicode" "-n"
+                       "--help" "-h"))
+         (uiop:quit 0)))))
+  (window))

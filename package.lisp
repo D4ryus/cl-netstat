@@ -2,4 +2,4 @@
 
 (defpackage #:cl-netstat
   (:use #:cl)
-  (:export))
+  (:export #:main))
