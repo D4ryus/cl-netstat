@@ -471,7 +471,7 @@
   (format t "        used to color output.~%")
   (format t "        Default: 1048576 (* 1024 1024)~%")
   (format t "    --refresh-time | -r number~%")
-  (format t "        Refresh timeout given in milliseconds~%")
+  (format t "        Refresh timeout given in milliseconds.~%")
   (format t "        Default: 250 (1/4 second)~%")
   (format t "    --graph | -g string~%")
   (format t "        Specify graph characters from lowest to highest.~%")
