@@ -226,22 +226,24 @@
                            (format nil "~8,,,' a" str)))))
 
 (defun format-interfaces (window stats)
-  (flet ((graph-line ()
-           (let ((length (- *graph-length* 5)))
-             (make-string (if (< length 0) 0 length) :initial-element #\Space))))
-    (with-style (window '(:white :black) '(:bold :underline))
-      (croatoan:add-string window
-                           (format nil "~a~a~a~a~a~a~a~a"
-                                   "NETWORK          "
-                                   "Total Rx "
-                                   "Total Tx "
-                                   "    Rx/s  "
-                                   "  Tx/s     "
-                                   "Graph"
-                                   (graph-line)
-                                   (if *print-time-p*
-                                       (format nil "~,2f" *refresh-time*)
-                                       "")))))
+  (let ((refresh-time (when *print-time-p*
+                        (format nil "~,2f" *refresh-time*))))
+    (flet ((graph-line ()
+             (let ((length (- *graph-length* 5 (length refresh-time))))
+               (make-string (if (< length 0) 0 length) :initial-element #\Space))))
+      (with-style (window '(:white :black) '(:bold :underline))
+        (croatoan:add-string window
+                             (format nil "~a~a~a~a~a~a~a~a"
+                                     "NETWORK          "
+                                     "Total Rx "
+                                     "Total Tx "
+                                     "    Rx/s  "
+                                     "  Tx/s     "
+                                     "Graph"
+                                     (graph-line)
+                                     (if *print-time-p*
+                                         refresh-time
+                                         ""))))))
   (loop :for stat :in stats
         :do
         (croatoan:new-line window)
