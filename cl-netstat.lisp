@@ -32,12 +32,14 @@
         (new-thing (gensym "new-thing")))
     `(let ((,old-thing (,thing ,window))
            (,new-thing ,new))
-       (if ,new-thing
-           (progn
-             (setf (,thing ,window) ,new-thing)
-             (prog1 (progn ,@body)
-               (setf (,thing ,window) ,old-thing)))
-           (progn ,@body)))))
+       (flet ((call-body ()
+                ,@body))
+         (if ,new-thing
+             (progn
+               (setf (,thing ,window) ,new-thing)
+               (prog1 (call-body)
+                 (setf (,thing ,window) ,old-thing)))
+             (call-body))))))
 
 (defmacro with-style ((window color-pair &optional attributes) &body body)
   (cond
