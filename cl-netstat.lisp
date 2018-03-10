@@ -82,16 +82,16 @@
 (defmethod get-max ((array-loop array-loop))
   (reduce #'max (slot-value array-loop 'data)))
 
-(defun to-icon (value &key (max 100) (empty #\Space) (icons *icons*))
+(defun to-icon (value &key (max 100) (icons *icons*))
   (unless *unicode-mode*
     (setf icons (list #\. #\o #\O)))
-  (or (cond ((= value 0) empty)
-            ((= max 0) empty)
-            ((< value 0) empty)
+  (or (cond ((= value 0) (car icons))
+            ((= max 0) (car icons))
+            ((< value 0) (car icons))
             ((>= value max) (car (last icons)))
             (t (nth (truncate (/ value (/ max (length icons))))
                     icons)))
-      empty))
+      (car icons)))
 
 (defun format-graph-part (window number &optional (max *max*))
   (multiple-value-bind (_ color)
