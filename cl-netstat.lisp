@@ -413,7 +413,7 @@
 (defun usage (&optional error-msg &rest args)
   (when error-msg
     (apply #'format t error-msg args))
-  (format t "usage: cl-netstat [--color | -c] [--max | -m] [--graph | -g] [--start-swank | -s] [--no-unicode | -n] [--help | -h]~%")
+  (format t "usage: cl-netstat [--color | -c (8 256 none)] [--max | -m number] [--graph | -g \".oO\"] [--start-swank |-s] [--no-unicode | -n] [--help | -h]~%")
   (when error-msg
     (error error-msg args)))
 
