@@ -413,7 +413,7 @@
 (defun usage (&optional error-msg &rest args)
   (when error-msg
     (apply #'format t error-msg args))
-  (format t "usage: cl-netstat [--color | -c] [--max | -m] [--graph | -g] [--no-unicode | -n] [--help | -h]~%")
+  (format t "usage: cl-netstat [--color | -c] [--max | -m] [--graph | -g] [--start-swank | -s] [--no-unicode | -n] [--help | -h]~%")
   (when error-msg
     (error error-msg args)))
 
@@ -480,6 +480,8 @@
   (format t "    --graph | -g string~%")
   (format t "        Specify graph characters from lowest to highest.~%")
   (format t "        Default: ▁▂▃▄▅▆▇█ (.oO)~%")
+  (format t "    --start-swank | -s~%")
+  (format t "        Run (swank:create-server).~%")
   (format t "    --no-unicode | -n~%")
   (format t "        Show .oO instead of unicode bars as graph.~%")
   (format t "        This will overwrite --graph~%")
@@ -516,6 +518,8 @@
          (setf *icons* (map 'list #'identity arg))))
       (("--no-unicode" "-n")
        (setf *unicode-mode* nil))
+      (("--start-swank" "-s")
+       (swank:create-server))
       (("--help" "-h")
        (progn
          (help)
@@ -530,6 +534,7 @@
                        "--refresh-time" "-r"
                        "--graph" "-g"
                        "--no-unicode" "-n"
-                       "--help" "-h"))
+                       "--help" "-h"
+                       "--start-swank" "-s"))
          (uiop:quit 0)))))
   (window))

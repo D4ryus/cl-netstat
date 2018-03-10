@@ -12,7 +12,8 @@
   :depends-on (#:croatoan
                #:alexandria
                #:cl-ppcre
-               #:uiop)
+               #:uiop
+               #:swank)
   :serial t
   :components ((:file "package")
                (:file "term-rgb-map")
