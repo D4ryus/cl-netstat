@@ -413,7 +413,7 @@
 (defun usage (&optional error-msg &rest args)
   (when error-msg
     (apply #'format t error-msg args))
-  (format t "usage: cl-netstat [--color | -c (8 256 none)] [--max | -m number] [--graph | -g \".oO\"] [--start-swank |-s] [--no-unicode | -n] [--help | -h]~%")
+  (format t "usage: cl-netstat [--color | -c (8 256 none)] [--max | -m number] [--graph | -g \".oO\"] [--start-swank |-s] [--no-unicode | -n] [--graph-length | -l number] [--help | -h]~%")
   (when error-msg
     (error error-msg args)))
 
@@ -485,6 +485,9 @@
   (format t "    --no-unicode | -n~%")
   (format t "        Show .oO instead of unicode bars as graph.~%")
   (format t "        This will overwrite --graph~%")
+  (format t "    --graph-length | -l~%")
+  (format t "        Specify graph length.~%")
+  (format t "        Default: ~a~%" *graph-length*)
   (format t "    --help | -h~%")
   (format t "        Show this message.~%"))
 
@@ -520,6 +523,10 @@
        (setf *unicode-mode* nil))
       (("--start-swank" "-s")
        (swank:create-server))
+      (("--graph-length" "-l")
+       (progn
+         (shift)
+         (setf *graph-length* (parse-integer arg))))
       (("--help" "-h")
        (progn
          (help)
@@ -534,6 +541,7 @@
                        "--refresh-time" "-r"
                        "--graph" "-g"
                        "--no-unicode" "-n"
+                       "--graph-length" "-l"
                        "--help" "-h"
                        "--start-swank" "-s"))
          (uiop:quit 0)))))
