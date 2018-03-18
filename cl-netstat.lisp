@@ -10,7 +10,7 @@
 (defparameter *print-time-p* nil)
 (defparameter *color-mode* :256)
 (defparameter *unicode-mode* t)
-(defparameter *icons* (list #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█))
+(defparameter *icons* (list #\Space #\▁ #\▂ #\▃ #\▄ #\▅ #\▆ #\▇ #\█))
 
 (defparameter *rgy-percentage*
   (list 90 ;; over 90% -> red
@@ -84,14 +84,14 @@
 
 (defun to-icon (value &key (max 100) (icons *icons*))
   (unless *unicode-mode*
-    (setf icons (list #\. #\o #\O)))
-  (or (cond ((= value 0) (car icons))
-            ((= max 0) (car icons))
-            ((< value 0) (car icons))
-            ((>= value max) (car (last icons)))
-            (t (nth (truncate (/ value (/ max (length icons))))
-                    icons)))
-      (car icons)))
+    (setf icons (list #\Space #\. #\o #\O #\^)))
+  (let ((icon-cnt (length icons)))
+    (cond ((<=  value 0) (car icons))
+          ((= max 0) (car icons))
+          ((>= value max) (car (last icons)))
+          ((< icon-cnt 3) (car (last icons)))
+          (t (nth (+ 1 (truncate (/ value (/ max (- icon-cnt 2)))))
+                  icons)))))
 
 (defun format-graph-part (window number &optional (max *max*))
   (multiple-value-bind (_ color)
@@ -479,7 +479,7 @@
   (format t "        Default: 250 (1/4 second)~%")
   (format t "    --graph | -g string~%")
   (format t "        Specify graph characters from lowest to highest.~%")
-  (format t "        Default: ▁▂▃▄▅▆▇█ (.oO)~%")
+  (format t "        Default:  ▁▂▃▄▅▆▇█ ( .oO^)~%")
   (format t "    --start-swank | -s~%")
   (format t "        Run (swank:create-server).~%")
   (format t "    --no-unicode | -n~%")
