@@ -153,20 +153,22 @@
                           :direction :input)
     ;; ignore first 2 lines
     (dotimes (ignored 2) (read-line stream nil nil))
-    (loop :for line = (read-line stream nil nil)
-          :while line
-          :collect (destructuring-bind (interface data)
-                       (cl-ppcre:split ":" (string-trim " " line))
-                     (cons interface (mapcar (lambda (val data)
-                                               (cons val
-                                                     (parse-integer data)))
-                                             (list :rec-bytes :rec-packets :rec-errs
-                                                   :rec-drop :rec-fifo :rec-frame
-                                                   :rec-compressed :rec-multicast
-                                                   :trans-bytes :trans-packets :trans-errs
-                                                   :trans-drop :trans-fifo :trans-colls
-                                                   :trans-carrier :trans-compressed)
-                                             (cdr (cl-ppcre:split "\\s+" data))))))))
+    (sort
+     (loop :for line = (read-line stream nil nil)
+           :while line
+           :collect (destructuring-bind (interface data)
+                        (cl-ppcre:split ":" (string-trim " " line))
+                      (cons interface (mapcar (lambda (val data)
+                                                (cons val
+                                                      (parse-integer data)))
+                                              (list :rec-bytes :rec-packets :rec-errs
+                                                               :rec-drop :rec-fifo :rec-frame
+                                                    :rec-compressed :rec-multicast
+                                                    :trans-bytes :trans-packets :trans-errs
+                                                               :trans-drop :trans-fifo :trans-colls
+                                                    :trans-carrier :trans-compressed)
+                                              (cdr (cl-ppcre:split "\\s+" data))))))
+     #'string< :key #'car)))
 
 (defmacro assoc-chain (args data)
   `(assoc ,(car (last args))
