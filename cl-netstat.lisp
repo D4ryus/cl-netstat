@@ -286,8 +286,8 @@
 
 (defun draw (screen)
   (let ((stats (gen-stats *last-stats*
-                         (setf *last-stats*
-                               (get-interface-data)))))
+                          (setf *last-stats*
+                                (get-interface-data)))))
     (croatoan:clear screen)
     (draw-stats screen stats)))
 
