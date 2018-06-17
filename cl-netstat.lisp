@@ -5,7 +5,6 @@
 ;;; "cl-stats" goes here. Hacks and glory await!
 
 (defparameter *max* (* 1024 1024))
-(defparameter *graph-length* 23)
 (defparameter *refresh-time* 0.25)
 (defparameter *print-time-p* nil)
 (defparameter *color-mode* :256)
@@ -58,13 +57,18 @@
 
 (defclass array-loop ()
   ((size :initarg :size)
-   (data)
+   (data :initarg :data)
    (index :initform 0)))
 
 (defmethod initialize-instance :after ((array-loop array-loop) &rest initargs)
   (declare (ignorable initargs))
   (with-slots (size data) array-loop
-    (setf data (make-array size :initial-element 0))))
+    (setf data (make-array size :initial-element 0))
+    (let ((data-arg (getf initargs :data)))
+      (when data-arg
+        (mapc (lambda (element)
+                (push-element array-loop element))
+              (reverse data-arg))))))
 
 (defmethod push-element ((array-loop array-loop) element)
   (with-slots (size data index) array-loop
@@ -208,18 +212,30 @@
 
 (defparameter *interface-graphs* nil)
 
-(defun update-graphs (stats)
-  (loop :for (interface . stat) :in stats
-        :unless (gethash interface *interface-graphs*)
-        :do (setf (gethash interface *interface-graphs*)
-                  (make-instance 'array-loop :size *graph-length*)))
-  (loop :for key :being :the :hash-key :of *interface-graphs*
-        :do (let ((data (cdr (assoc key stats :test #'equal))))
-              (push-element (gethash key *interface-graphs*)
-                            (if data
-                                (+ (nth 2 data)
-                                   (nth 3 data))
-                                0)))))
+(let ((width 0))
+  (defun update-graphs (stats current-width)
+    ;; add new interfaces
+    (loop :for (interface . stat) :in stats
+          :unless (gethash interface *interface-graphs*)
+          :do (setf (gethash interface *interface-graphs*)
+                    (make-instance 'array-loop :size current-width)))
+    ;; update length
+    (unless (and (eql current-width width)
+                 (> current-width 57))
+      (setf width current-width)
+      (loop :for key :being :the :hash-key :of *interface-graphs*
+            :do (let ((data (gethash key *interface-graphs*)))
+                  (setf (gethash key *interface-graphs*)
+                        (make-instance 'array-loop :size (- width 57)
+                                                   :data (get-list data))))))
+    ;; update data
+    (loop :for key :being :the :hash-key :of *interface-graphs*
+          :do (let ((data (cdr (assoc key stats :test #'equal))))
+                (push-element (gethash key *interface-graphs*)
+                              (if data
+                                  (+ (nth 2 data)
+                                     (nth 3 data))
+                                  0))))))
 
 (defun format-bytes (window bytes &key max)
   (multiple-value-bind (str color) (format-size bytes :max max)
@@ -281,7 +297,7 @@
   (croatoan:move window 0 0)
   (setf (croatoan:.color-pair window)
         '(:white :black))
-  (update-graphs stats)
+  (update-graphs stats (croatoan:.width window))
   (format-interfaces window stats))
 
 (defun draw (screen)
@@ -487,9 +503,6 @@
   (format t "    --no-unicode | -n~%")
   (format t "        Show .oO instead of unicode bars as graph.~%")
   (format t "        This will overwrite --graph~%")
-  (format t "    --graph-length | -l~%")
-  (format t "        Specify graph length.~%")
-  (format t "        Default: ~a~%" *graph-length*)
   (format t "    --help | -h~%")
   (format t "        Show this message.~%"))
 
@@ -525,10 +538,6 @@
        (setf *unicode-mode* nil))
       (("--start-swank" "-s")
        (swank:create-server))
-      (("--graph-length" "-l")
-       (progn
-         (shift)
-         (setf *graph-length* (parse-integer arg))))
       (("--help" "-h")
        (progn
          (help)
