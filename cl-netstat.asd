@@ -1,8 +1,8 @@
 ;;;; cl-netstat.asd
 
 (asdf:defsystem #:cl-netstat
-  :description ""
-  :author "d4ryus <d4ryus@openmailbox.org>"
+  :description "Curses Program which visualizes network traffic by reading /proc/net/dev"
+  :author "d4ryus <d4ryus@teknik.io>"
   :license "LLGPL"
   :homepage "https://github.com/d4ryus/cl-netstat"
   :build-operation "deploy-op"

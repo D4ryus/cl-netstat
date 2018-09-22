@@ -16,16 +16,6 @@
         75 ;; over 75% -> yellow
         10)) ;; under 10% -> green
 
-;; (progn
-;;   (setf *graph-length* 100)
-;;   (setf *interface-graphs* (make-hash-table :test 'equal)))
-
-;; .oO -> ...OOO.o (10mb/s)
-;;        ..OOO.oO (20mb/s)
-;;        .OOO.oOO (20mb/s)
-;;        OOO.oOOo (10mb/s)
-;;        OO.oOOo. ( 5mb/s)
-
 (defmacro with-thing ((window new thing) &body body)
   (let ((old-thing (gensym "old-thing"))
         (new-thing (gensym "new-thing")))
@@ -160,18 +150,20 @@
     (sort
      (loop :for line = (read-line stream nil nil)
            :while line
-           :collect (destructuring-bind (interface data)
-                        (cl-ppcre:split ":" (string-trim " " line))
-                      (cons interface (mapcar (lambda (val data)
-                                                (cons val
-                                                      (parse-integer data)))
-                                              (list :rec-bytes :rec-packets :rec-errs
-                                                               :rec-drop :rec-fifo :rec-frame
-                                                    :rec-compressed :rec-multicast
-                                                    :trans-bytes :trans-packets :trans-errs
-                                                               :trans-drop :trans-fifo :trans-colls
-                                                    :trans-carrier :trans-compressed)
-                                              (cdr (cl-ppcre:split "\\s+" data))))))
+           :collect
+           (destructuring-bind (interface data)
+               (cl-ppcre:split ":" (string-trim " " line))
+             (cons interface
+                   (mapcar (lambda (val data)
+                             (cons val
+                                   (parse-integer data)))
+                           (list :rec-bytes :rec-packets :rec-errs
+                                            :rec-drop :rec-fifo :rec-frame
+                                 :rec-compressed :rec-multicast
+                                 :trans-bytes :trans-packets :trans-errs
+                                            :trans-drop :trans-fifo :trans-colls
+                                 :trans-carrier :trans-compressed)
+                           (cdr (cl-ppcre:split "\\s+" data))))))
      #'string< :key #'car)))
 
 (defmacro assoc-chain (args data)
@@ -208,8 +200,6 @@
                                    (truncate (/ (- b a) *refresh-time*)))
                                  data-b data-a))))
 
-(defparameter *last-stats* nil)
-
 (defparameter *interface-graphs* nil)
 
 (let ((width 0))
@@ -245,7 +235,7 @@
 
 (defun format-interfaces (window stats)
   (let ((refresh-time (when *print-time-p*
-                        (format nil "~,2f" *refresh-time*))))
+                        (format nil " ~,2f" *refresh-time*))))
     (with-style (window '(:white :black) '(:bold :underline))
       (croatoan:add-string window
                            (format nil "~a~a~a~a~a~a~a"
@@ -287,7 +277,6 @@
                        (cdr (assoc-chain (:rec-bytes) data))
                        (cdr (assoc-chain (:trans-bytes) data)))))
 
-(defparameter *win* nil)
 
 (defun draw-stats (window stats)
   (croatoan:move window 0 0)
@@ -295,6 +284,8 @@
         '(:white :black))
   (update-graphs stats (croatoan:.width window))
   (format-interfaces window stats))
+
+(defparameter *last-stats* nil)
 
 (defun draw (screen)
   (let ((stats (gen-stats *last-stats*
@@ -318,31 +309,32 @@
                              :enable-fkeys t
                              :cursor-visibility nil)
     (reset scr)
-    (croatoan:event-case (scr event)
-      (#\q (return-from croatoan:event-case))
-      (#\+ (incf *refresh-time* 0.1))
-      (#\- (when (< (decf *refresh-time* 0.1) 0.1)
-             (setf *refresh-time* 0.1)))
-      (#\r (reset scr))
-      (#\c (clear scr))
-      (#\Space (setf *print-time-p* (not *print-time-p*)))
-      ((nil)
-       (restart-case (progn
-                       (sleep *refresh-time*)
-                       (draw scr))
-         (continue ()
-           :report (lambda (stream)
-                     (format stream "Continue Croatoan Event-Loop"))
-           (values nil t))
-         (reset ()
-           :report (lambda (stream)
-                     (format stream "Reset values"))
-           (reset scr)
-           (values nil t))
-         (abort ()
-           :report (lambda (stream)
-                     (format stream "Quit Croatoan Event-Loop"))
-           (return-from croatoan:event-case)))))))
+    (let ((refresh-step 0.05))
+      (croatoan:event-case (scr event)
+        (#\q (return-from croatoan:event-case))
+        (#\+ (incf *refresh-time* refresh-step))
+        (#\- (when (< (decf *refresh-time* refresh-step) refresh-step)
+               (setf *refresh-time* refresh-step)))
+        (#\r (reset scr))
+        (#\c (clear scr))
+        (#\Space (setf *print-time-p* (not *print-time-p*)))
+        ((nil)
+         (restart-case (progn
+                         (sleep *refresh-time*)
+                         (draw scr))
+           (continue ()
+             :report (lambda (stream)
+                       (format stream "Continue Croatoan Event-Loop"))
+             (values nil t))
+           (reset ()
+             :report (lambda (stream)
+                       (format stream "Reset values"))
+             (reset scr)
+             (values nil t))
+           (abort ()
+             :report (lambda (stream)
+                       (format stream "Quit Croatoan Event-Loop"))
+             (return-from croatoan:event-case))))))))
 
 (defun red-yellow-green-gradient-generator (count)
   (let ((red 255)
@@ -427,7 +419,9 @@
 (defun usage (&optional error-msg &rest args)
   (when error-msg
     (apply #'format t error-msg args))
-  (format t "usage: cl-netstat [--color | -c (8 256 none)] [--max | -m number] [--graph | -g \".oO\"] [--start-swank |-s] [--no-unicode | -n] [--graph-length | -l number] [--help | -h]~%")
+  (format t "usage: cl-netstat [--color | -c (8 256 none)] [--max | -m number] ~
+            [--graph | -g \".oO\"] [--start-swank |-s] [--no-unicode | -n] ~
+            [--graph-length | -l number] [--help | -h]~%")
   (when error-msg
     (error error-msg args)))
 
@@ -486,7 +480,7 @@
   (format t "        Default: 256~%")
   (format t "    --max | -m number~%")
   (format t "        Given number describes maximum network traffic,~%")
-  (format t "        used to color output.~%")
+  (format t "        used for color output.~%")
   (format t "        Default: 1048576 (* 1024 1024)~%")
   (format t "    --refresh-time | -r number~%")
   (format t "        Refresh timeout given in milliseconds.~%")
