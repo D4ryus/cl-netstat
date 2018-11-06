@@ -13,7 +13,8 @@
                #:alexandria
                #:cl-ppcre
                #:uiop
-               #:swank)
+               #:swank
+               #:deploy)
   :serial t
   :components ((:file "package")
                (:file "term-rgb-map")
