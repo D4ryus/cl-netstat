@@ -425,8 +425,6 @@
   (when error-msg
     (error error-msg args)))
 
-(apply #'format t "~a ~a~%" (list :a :a))
-
 (defmacro switch-args (args usage-fn &rest cases)
   `(with-args (,args ,usage-fn)
      (str-case arg
