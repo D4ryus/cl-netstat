@@ -494,10 +494,6 @@
   (format t "    --help | -h~%")
   (format t "        Show this message.~%"))
 
-;; prevent deploy to print status messages
-(defun deploy:status (level format-string &rest format-args)
-  nil)
-
 (defun main ()
   (when (uiop:command-line-arguments)
     (switch-args (uiop:command-line-arguments) #'usage
