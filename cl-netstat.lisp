@@ -230,31 +230,29 @@
 (defun format-bytes (window bytes &key max)
   (multiple-value-bind (str color) (format-size bytes :max max)
     (with-style (window color)
-      (croatoan:add-string window
-                           (format nil "~8,,,' a" str)))))
+      (format window "~8,,,' a" str))))
 
 (defun format-interfaces (window stats)
   (let ((refresh-time (when *print-time-p*
                         (format nil " ~,2f" *refresh-time*))))
     (with-style (window '(:white :black) '(:bold :underline))
-      (croatoan:add-string window
-                           (format nil "~a~a~a~a~a~a~a"
-                                   "NETWORK          "
-                                   "Total Rx "
-                                   "Total Tx "
-                                   "    Rx/s  "
-                                   "  Tx/s     "
-                                   "Graph"
-                                   (if *print-time-p*
-                                       refresh-time
-                                       "")))))
+      (format window "~a~a~a~a~a~a~a"
+              "NETWORK          "
+              "Total Rx "
+              "Total Tx "
+              "    Rx/s  "
+              "  Tx/s     "
+              "Graph"
+              (if *print-time-p*
+                  refresh-time
+                  ""))))
+
   (loop :for stat :in stats
         :do
         (croatoan:new-line window)
         (destructuring-bind (interface total-rx total-tx rx tx)
             stat
-          (croatoan:add-string window
-                               (format nil "~16,,,' a" interface))
+          (format window "~16,,,' a" interface)
           (croatoan:add-char window #\Space)
           (format-bytes window total-rx)
           (croatoan:add-char window #\Space)
