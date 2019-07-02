@@ -35,14 +35,14 @@
     ((and (null color-pair) (null attributes))
      `(progn ,@body))
     ((and (null color-pair) attributes)
-     `(with-thing (,window ,attributes croatoan:.attributes)
+     `(with-thing (,window ,attributes croatoan:attributes)
         (progn ,@body)))
     ((and color-pair (null attributes))
-     `(with-thing (,window ,color-pair croatoan:.color-pair)
+     `(with-thing (,window ,color-pair croatoan:color-pair)
         (progn ,@body)))
     (t
-     `(with-thing (,window ,attributes croatoan:.attributes)
-        (with-thing (,window ,color-pair croatoan:.color-pair)
+     `(with-thing (,window ,attributes croatoan:attributes)
+        (with-thing (,window ,color-pair croatoan:color-pair)
           (progn ,@body))))))
 
 (defclass array-loop ()
@@ -280,9 +280,9 @@
 
 (defun draw-stats (window stats)
   (croatoan:move window 0 0)
-  (setf (croatoan:.color-pair window)
+  (setf (croatoan:color-pair window)
         '(:white :black))
-  (update-graphs stats (croatoan:.width window))
+  (update-graphs stats (croatoan:width window))
   (format-interfaces window stats))
 
 (defparameter *last-stats* nil)
@@ -306,8 +306,8 @@
 (defun window ()
   (croatoan:with-screen (scr :input-echoing nil
                              :input-blocking nil
-                             :enable-fkeys t
-                             :cursor-visibility nil)
+                             :enable-function-keys t
+                             :cursor-visible nil)
     (reset scr)
     (let ((refresh-step 0.05))
       (croatoan:event-case (scr event)
