@@ -28,6 +28,9 @@ terminal. You can either start up sbcl, load cl-netstat and then call
 ```(asdf:make :cl-netstat)``` and run that.  When using the executable
 see ```-h``` for configuration options.
 
+The terminal used has to be able to display more than the 8 basic colors,
+for example TERM=xterm-256color
+
 ## Keybindings
 
 | Key   | Usage                         |
@@ -43,3 +46,4 @@ see ```-h``` for configuration options.
 ## Screenshot
 
 ![screenshot](./screenshot.jpg)
+
