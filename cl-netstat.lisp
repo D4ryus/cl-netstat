@@ -35,14 +35,14 @@
     ((and (null color-pair) (null attributes))
      `(progn ,@body))
     ((and (null color-pair) attributes)
-     `(with-thing (,window ,attributes croatoan:.attributes)
+     `(with-thing (,window ,attributes croatoan:attributes)
         (progn ,@body)))
     ((and color-pair (null attributes))
-     `(with-thing (,window ,color-pair croatoan:.color-pair)
+     `(with-thing (,window ,color-pair croatoan:color-pair)
         (progn ,@body)))
     (t
-     `(with-thing (,window ,attributes croatoan:.attributes)
-        (with-thing (,window ,color-pair croatoan:.color-pair)
+     `(with-thing (,window ,attributes croatoan:attributes)
+        (with-thing (,window ,color-pair croatoan:color-pair)
           (progn ,@body))))))
 
 (defclass array-loop ()
@@ -230,31 +230,29 @@
 (defun format-bytes (window bytes &key max)
   (multiple-value-bind (str color) (format-size bytes :max max)
     (with-style (window color)
-      (croatoan:add-string window
-                           (format nil "~8,,,' a" str)))))
+      (format window "~8,,,' a" str))))
 
 (defun format-interfaces (window stats)
   (let ((refresh-time (when *print-time-p*
                         (format nil " ~,2f" *refresh-time*))))
     (with-style (window '(:white :black) '(:bold :underline))
-      (croatoan:add-string window
-                           (format nil "~a~a~a~a~a~a~a"
-                                   "NETWORK          "
-                                   "Total Rx "
-                                   "Total Tx "
-                                   "    Rx/s  "
-                                   "  Tx/s     "
-                                   "Graph"
-                                   (if *print-time-p*
-                                       refresh-time
-                                       "")))))
+      (format window "~a~a~a~a~a~a~a"
+              "NETWORK          "
+              "Total Rx "
+              "Total Tx "
+              "    Rx/s  "
+              "  Tx/s     "
+              "Graph"
+              (if *print-time-p*
+                  refresh-time
+                  ""))))
+
   (loop :for stat :in stats
         :do
         (croatoan:new-line window)
         (destructuring-bind (interface total-rx total-tx rx tx)
             stat
-          (croatoan:add-string window
-                               (format nil "~16,,,' a" interface))
+          (format window "~16,,,' a" interface)
           (croatoan:add-char window #\Space)
           (format-bytes window total-rx)
           (croatoan:add-char window #\Space)
@@ -280,9 +278,9 @@
 
 (defun draw-stats (window stats)
   (croatoan:move window 0 0)
-  (setf (croatoan:.color-pair window)
+  (setf (croatoan:color-pair window)
         '(:white :black))
-  (update-graphs stats (croatoan:.width window))
+  (update-graphs stats (croatoan:width window))
   (format-interfaces window stats))
 
 (defparameter *last-stats* nil)
@@ -306,8 +304,8 @@
 (defun window ()
   (croatoan:with-screen (scr :input-echoing nil
                              :input-blocking nil
-                             :enable-fkeys t
-                             :cursor-visibility nil)
+                             :enable-function-keys t
+                             :cursor-visible nil)
     (reset scr)
     (let ((refresh-step 0.05))
       (croatoan:event-case (scr event)
