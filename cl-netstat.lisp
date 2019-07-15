@@ -418,8 +418,8 @@
   (when error-msg
     (apply #'format t error-msg args))
   (format t "usage: cl-netstat [--color | -c (8 256 none)] [--max | -m number] ~
-            [--graph | -g \".oO\"] [--start-swank |-s] [--no-unicode | -n] ~
-            [--graph-length | -l number] [--help | -h]~%")
+            [--graph | -g \".oO\"] [--start-swank | -s] [--no-unicode | -n] ~
+            [--help | -h]~%")
   (when error-msg
     (error error-msg args)))
 
@@ -534,7 +534,6 @@
                        "--refresh-time" "-r"
                        "--graph" "-g"
                        "--no-unicode" "-n"
-                       "--graph-length" "-l"
                        "--help" "-h"
                        "--start-swank" "-s"))
          (uiop:quit 0)))))
