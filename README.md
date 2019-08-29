@@ -14,14 +14,16 @@ Only tested with [sbcl](https://www.sbcl.org/) on Linux.
 
 ## Installation
 
-Just clone it into ```quicklisp/local-project``` and run
-```(ql:quickload :cl-netstat)```
+Clone into ```quicklisp/local-project``` (or somewhere else where
+quicklisp/asdf will find it) and run ```(ql:quickload :cl-netstat)```
 
 ## Build
 
 ```commonlisp
 (asdf:make :cl-netstat)
 ```
+You might need to run ```(ql:quickload :deploy)``` before running
+```asdf:make```.
 
 ## Run
 
